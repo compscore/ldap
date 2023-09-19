@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  ldap:
+    image: osixia/openldap
+    container_name: my-ldap-container
+    environment:
+      LDAP_ORGANISATION: MyOrg
+      LDAP_DOMAIN: myorg.com
+      LDAP_ADMIN_PASSWORD: adminpassword
+      LDAP_BASE_DN: dc=myorg,dc=com
+    ports:
+      - "389:389"
+      - "636:636"
