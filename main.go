@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 )
@@ -26,6 +27,14 @@ func (o *optionsStruct) Marshal(options map[string]interface{}) {
 func Run(ctx context.Context, target string, command string, expectedOutput string, username string, password string, options map[string]interface{}) (bool, string) {
 	optionsStruct := optionsStruct{}
 	optionsStruct.Marshal(options)
+
+	if !strings.Contains(target, ":") {
+		if optionsStruct.LDAPS {
+			target = fmt.Sprintf("%s:636", target)
+		} else {
+			target = fmt.Sprintf("%s:389", target)
+		}
+	}
 
 	errChan := make(chan error)
 
