@@ -24,6 +24,10 @@ func (o *optionsStruct) Marshal(options map[string]interface{}) {
 	}
 }
 
+func filter_error(err error) string {
+	return strings.Replace(err.Error(), "0x00", "", -1)
+}
+
 func Run(ctx context.Context, target string, command string, expectedOutput string, username string, password string, options map[string]interface{}) (bool, string) {
 	optionsStruct := optionsStruct{}
 	optionsStruct.Marshal(options)
@@ -43,7 +47,7 @@ func Run(ctx context.Context, target string, command string, expectedOutput stri
 
 		client, err := ldap.Dial("tcp", target)
 		if err != nil {
-			errChan <- fmt.Errorf("failed to connect to LDAP server: %s", err.Error())
+			errChan <- fmt.Errorf("failed to connect to LDAP server: %s", filter_error(err))
 			return
 		}
 		defer client.Close()
@@ -51,14 +55,14 @@ func Run(ctx context.Context, target string, command string, expectedOutput stri
 		if optionsStruct.LDAPS {
 			err = client.StartTLS(&tls.Config{InsecureSkipVerify: true})
 			if err != nil {
-				errChan <- fmt.Errorf("failed to start TLS: %s", err.Error())
+				errChan <- fmt.Errorf("failed to start TLS: %s", filter_error(err))
 				return
 			}
 		}
 
 		err = client.Bind(username, password)
 		if err != nil {
-			errChan <- fmt.Errorf("failed to bind to LDAP server: %s", err.Error())
+			errChan <- fmt.Errorf("failed to bind to LDAP server: %s", filter_error(err))
 			return
 		}
 
@@ -68,11 +72,11 @@ func Run(ctx context.Context, target string, command string, expectedOutput stri
 
 	select {
 	case <-ctx.Done():
-		return false, fmt.Sprintf("check timed out: %s", ctx.Err().Error())
+		return false, fmt.Sprintf("check timed out: %s", filter_error(ctx.Err()))
 	case err := <-errChan:
 		if err == nil {
 			return true, ""
 		}
-		return false, fmt.Sprintf("check encountered an error: %s", err.Error())
+		return false, fmt.Sprintf("check encountered an error: %s", filter_error(err))
 	}
 }
